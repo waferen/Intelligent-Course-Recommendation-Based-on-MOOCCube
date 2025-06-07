@@ -1,0 +1,4 @@
+# 忽略train、test、data、MOOCCube文件夹
+/MOOCCube/
+/data/
+/MOOCCube/ 
