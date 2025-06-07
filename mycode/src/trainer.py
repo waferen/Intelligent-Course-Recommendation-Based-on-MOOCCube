@@ -2,126 +2,89 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import random
-from tqdm import tqdm # 用于显示进度条
+from tqdm import tqdm
 
 def train_model(model, edge_index, train_interactions,
                 user_ids_global_range, course_ids_global_range,
                 num_epochs, batch_size, learning_rate, device):
     """
-    训练LightGCN模型。
-
-    Args:
-        model (LightGCN): LightGCN模型实例。
-        edge_index (torch.LongTensor): 训练图的边索引。
-        train_interactions (list): 训练集用户-课程交互列表 [(user_id, course_id), ...]。
-        user_ids_global_range (tuple): 用户全局ID范围。
-        course_ids_global_range (tuple): 课程全局ID范围。
-        num_epochs (int): 训练轮数。
-        batch_size (int): 批处理大小。
-        learning_rate (float): 学习率。
-        device (torch.device): 训练设备（CPU或CUDA）。
-    
-    Returns:
-        tuple: 训练好的模型实例和最终学习到的Embedding矩阵。
+    训练LightGCN模型，并返回每个Epoch的损失。
     """
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    model.to(device) # 将模型移动到指定设备
-    edge_index = edge_index.to(device) # 将图结构也移动到指定设备
+    model.to(device)
+    edge_index = edge_index.to(device)
 
-    # 获取所有课程的全局ID列表，用于负采样
     all_course_global_ids = list(range(course_ids_global_range[0], course_ids_global_range[1]))
     
-    # 构建用户已交互课程的集合，以便快速判断是否已交互 (训练集)
+    print("Building training user-positive-items map...")
     user_positive_items = {}
-    for u_id, c_id in train_interactions:
+    for u_id, c_id in tqdm(train_interactions, desc="  Building map"):
         user_positive_items.setdefault(u_id, set()).add(c_id)
+
+    # 新增：用于记录每个Epoch的损失
+    epoch_losses = []
 
     print("Starting training...")
     for epoch in range(num_epochs):
-        model.train() # 设置模型为训练模式
+        model.train()
         total_loss = 0
         
-        random.shuffle(train_interactions) # 每次Epoch重新打乱训练交互顺序
+        random.shuffle(train_interactions)
         
         # 遍历训练交互数据，按批次进行训练
-        for i in tqdm(range(0, len(train_interactions), batch_size), desc=f"Epoch {epoch+1}"):
+        batch_iterator = tqdm(range(0, len(train_interactions), batch_size), desc=f"Epoch {epoch+1}")
+        for i in batch_iterator:
             batch_interactions = train_interactions[i : i + batch_size]
             
-            # 采样当前批次的用户、正样本、负样本
-            batch_users = []
-            batch_pos_courses = []
-            batch_neg_courses = []
-
+            batch_users, batch_pos_courses, batch_neg_courses = [], [], []
             for u_id, pos_c_id in batch_interactions:
                 batch_users.append(u_id)
                 batch_pos_courses.append(pos_c_id)
-                
-                # 负采样：随机选择一个用户未在训练集中交互过的课程
                 neg_c_id = random.choice(all_course_global_ids)
                 while neg_c_id in user_positive_items.get(u_id, set()):
                     neg_c_id = random.choice(all_course_global_ids)
                 batch_neg_courses.append(neg_c_id)
 
-            # 将采样的ID列表转换为PyTorch Tensor，并移动到设备
             batch_users_tensor = torch.tensor(batch_users, dtype=torch.long).to(device)
             batch_pos_courses_tensor = torch.tensor(batch_pos_courses, dtype=torch.long).to(device)
             batch_neg_courses_tensor = torch.tensor(batch_neg_courses, dtype=torch.long).to(device)
 
-            optimizer.zero_grad() # 清空梯度
+            optimizer.zero_grad()
             
-            # 获取所有节点的Embedding (通过模型的前向传播)
             final_embeddings = model(edge_index)
             
-            # 提取当前批次用户、正样本、负样本的Embedding
             user_embeddings = final_embeddings[batch_users_tensor]
             pos_course_embeddings = final_embeddings[batch_pos_courses_tensor]
             neg_course_embeddings = final_embeddings[batch_neg_courses_tensor]
 
-            # 计算点积分数
             pos_scores = (user_embeddings * pos_course_embeddings).sum(dim=1)
             neg_scores = (user_embeddings * neg_course_embeddings).sum(dim=1)
-
-            # 计算BPR损失
-            loss = -F.logsigmoid(pos_scores - neg_scores).mean() # BPR loss的公式
-
-            # 反向传播和优化器步骤
+            loss = -F.logsigmoid(pos_scores - neg_scores).mean()
+            
             loss.backward()
             optimizer.step()
             
-            total_loss += loss.item() # 累加损失
-
-        # 打印当前Epoch的平均损失
-        print(f"Epoch {epoch+1}, Loss: {total_loss / (len(train_interactions) / batch_size):.4f}")
+            total_loss += loss.item()
+            # 在tqdm进度条上动态显示当前批次的损失
+            batch_iterator.set_postfix(loss=loss.item())
+        
+        avg_epoch_loss = total_loss / (len(train_interactions) / batch_size)
+        epoch_losses.append(avg_epoch_loss)
+        print(f"Epoch {epoch+1}, Average Loss: {avg_epoch_loss:.4f}")
     
     print("Training finished.")
 
-    return model, final_embeddings # 返回训练好的模型实例和最终Embedding
+    # 返回模型、最终Embedding和损失历史
+    return model, final_embeddings, epoch_losses
 
-def evaluate_model(model, edge_index, final_embeddings, # final_embeddings 可以直接传入，或在内部调用 model(edge_index) 获得
+# evaluate_model 函数保持不变
+# ... (将 evaluate_model 函数的完整代码粘贴到这里) ...
+def evaluate_model(model, edge_index, final_embeddings, 
                    test_interactions,
                    user_ids_global_range, course_ids_global_range,
                    user_positive_items_train, # 用户在训练集中已交互的课程
                    user_positive_items_test,  # 用户在测试集中已交互的课程
                    k_values=[10, 20], num_neg_samples=99, device='cpu'):
-    """
-    评估LightGCN模型在测试集上的性能。
-
-    Args:
-        model (LightGCN): 训练好的LightGCN模型实例。
-        edge_index (torch.LongTensor): 图的边索引（用于获取最终Embedding）。
-        final_embeddings (torch.Tensor): 训练好的所有节点的Embedding矩阵。
-        test_interactions (list): 测试集中的用户-课程交互列表 [(user_id, course_id), ...]。
-        user_ids_global_range (tuple): 用户全局ID范围。
-        course_ids_global_range (tuple): 课程全局ID范围。
-        user_positive_items_train (dict): 训练集中每个用户已交互课程的集合。
-        user_positive_items_test (dict): 测试集中每个用户已交互课程的列表。
-        k_values (list): 评估的K值列表，例如 [10, 20]。
-        num_neg_samples (int): 评估时每个真实正样本对应的负样本数量。
-        device (torch.device): 评估设备。
-    
-    Returns:
-        tuple: 包含平均HR@K和NDCG@K分数的字典。
-    """
     model.eval() # 设置模型为评估模式 (禁用 dropout 等)
     
     # 获取所有课程的全局ID列表，用于负采样
