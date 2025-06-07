@@ -1,0 +1,46 @@
+name: course_recommender
+channels:
+  - pytorch
+  - dglteam # 备用，如果你想尝试DGL
+  - pyg # PyTorch Geometric的channel
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8 # 你的云服务器是Python 3.8
+
+  # PyTorch 2.0.0+ 才能支持 CUDA 12.x
+  # 这里选择 PyTorch 2.1.0 作为稳定版本
+  - pytorch=2.1.0
+  - torchvision=0.16.0 # PyTorch的视觉库，推荐配套安装
+  - torchaudio=2.1.0  # PyTorch的音频库，推荐配套安装
+  - pytorch-cuda=12.1 # PyTorch 2.1.0 官方支持 CUDA 11.8 和 12.1。
+                      # 虽然你的CUDA是12.2，但PyTorch通常会兼容次要版本。
+                      # 如果12.1不兼容，可以尝试安装更高版本的PyTorch或降级CUDA（通常不推荐在云服务器上降级CUDA）
+                      # 或者在pip安装时指定具体的.whl文件。
+                      # 最常见且推荐的方式是安装PyTorch官方推荐的CUDA版本，即12.1。
+                      # 即使你的系统CUDA是12.2，通常使用12.1的PyTorch也问题不大。
+
+  - numpy
+  - pandas
+  - scikit-learn
+  - tqdm
+  - matplotlib
+  - seaborn
+
+  # PyTorch Geometric (PyG) 及其依赖
+  # 注意：由于PyG对PyTorch/CUDA版本要求严格，通常需要手动指定依赖版本
+  # 这里根据 PyTorch 2.1.0 和 CUDA 12.1 来选择
+  # 官方安装指南：https://pytorch-geometric.readthedocs.io/en/latest/install/installation.html
+  # 选择：conda install pytorch-geometric -c pyg -c conda-forge
+  # 或者更稳妥地手动安装依赖
+  - torch-scatter=2.1.0
+  - torch-sparse=0.6.17
+  - torch-cluster=1.6.1
+  - torch-spline-conv=1.2.2
+  - torch-geometric=2.3.1 # PyG主包，确保与依赖版本兼容
+  # 如果上述特定版本安装失败，可以尝试仅保留 - pyg 行，并确保在安装过程中观察conda的提示信息。
+  # 实在不行，就用 pip install torch-geometric，它会尝试解决依赖。
+
+  - pip:
+      # - transformers # 如果有文本特征需求
+      # - sentence-transformers # 如果有文本特征需求
