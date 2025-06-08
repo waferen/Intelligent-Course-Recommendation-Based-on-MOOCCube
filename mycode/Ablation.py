@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     # 定义数据文件所在的目录
     data_dir = 'data/' 
-    results_dir = 'results/'
+    results_dir = 'results/Ablation_results'
     os.makedirs(results_dir, exist_ok=True) # 确保结果目录存在
     # 2. 模型和训练超参数
     embedding_dim = 64  # 节点Embedding的维度
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     # 将此变量设置为你希望运行的实验名称（键），例如 "LightGCN_Full_KG"
     # 如果设置为 None 或 ""，则会运行 'experiment_configs' 中定义的所有实验。
     # run_specific_experiment = "LightGCN_Full_KG" # 默认先跑完整模型
-    run_specific_experiment = "Baseline_LightGCN" # 也可以先跑Baseline
-    # run_specific_experiment = None # 设置为 None 会运行所有实验
+    # run_specific_experiment = "Baseline_LightGCN" # 也可以先跑Baseline
+    run_specific_experiment = None # 设置为 None 会运行所有实验
 
     if run_specific_experiment:
         print(f"Running ONLY the experiment: {run_specific_experiment}\n")

@@ -2,6 +2,6 @@
 /MOOCCube/
 /data/
 /MOOCCube/ 
-
+/results/ 
 # 忽略.gitignore文件本身
 .gitignore 
