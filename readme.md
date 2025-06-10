@@ -52,12 +52,14 @@
 │   ├── data_loader.py            # 数据加载、ID映射、图构建
 │   ├── model.py                  # LightGCN模型定义
 │   └── trainer.py                # 训练循环、BPR损失、评估指标计算
-├── main.py                       # 项目主入口，运行消融实验
-├── environment.yml               # Conda环境配置文件
-├── requirements.txt              # Pip安装的包列表（备用或作为参考）
+├── main.py                       # 项目主入口，运行所有消融实验
+|—— Ablation.py                   # 消融实验代码
+|—— depthfinder.py                # 图深度探索实验代码
+|—— course-recommender.ipynb      # kaggle上可运行的实验代码
+├── env.yml                       # Conda环境配置文件
 ├── README.md                     # 项目说明文件
-└── report/                       # 存放大作业报告及相关图片
-    ├── course_recommendation_report.pdf
+└── visualize/                    # 存放大作业可视化内容
+    ├── viusalize code/
     └── images/
 ```
 
