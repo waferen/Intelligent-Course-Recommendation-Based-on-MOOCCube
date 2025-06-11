@@ -1,7 +1,11 @@
 # 忽略train、test、data、MOOCCube文件夹
 /MOOCCube/
-/data/
+# /data/
 /MOOCCube/ 
 /results/ 
 # 忽略.gitignore文件本身
 .gitignore 
+*.doc
+*.docx
+*.ppt
+*.pptx
