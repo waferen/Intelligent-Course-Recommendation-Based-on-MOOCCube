@@ -7,7 +7,7 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 # 从 src 模块导入函数和类
-from src.data_loader import load_and_process_data_for_experiment
+from mycode.src.data_loader import load_and_process_data_for_experiment
 from src.model import LightGCN
 from src.trainer import train_model, evaluate_model
 
