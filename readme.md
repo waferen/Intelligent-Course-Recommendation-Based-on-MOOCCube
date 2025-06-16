@@ -24,7 +24,7 @@
 
 1.  **创建Conda环境**：
     ```bash
-    conda env create -f environment.yml
+    conda env create -f env.yml
     ```
 2.  **激活环境**：
     ```bash
